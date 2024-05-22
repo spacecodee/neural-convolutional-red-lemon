@@ -12,7 +12,14 @@ from tensorflow.keras import layers
 
 def get_path_to_train():
     # Get the directory containing the current script
-    path_to_train = os.path.dirname(os.path.realpath(filename='train/'))
+    path_to_train = os.path.dirname(os.path.realpath(filename='train/train'))
+
+    return path_to_train
+
+
+def get_path_to_test():
+    # Get the directory containing the current script
+    path_to_train = os.path.dirname(os.path.realpath(filename='test/'))
 
     return path_to_train
 
@@ -106,7 +113,7 @@ def train_lemon_model():
     model = compile_model_to_train()
     train_ds = lemon_models_to_train()
     val_ds = lemon_models_to_validate()
-    epochs = 4
+    epochs = 6
     history = model.fit(
         train_ds,
         validation_data=val_ds,
@@ -143,5 +150,25 @@ def show_metrics_about_train():
     plt.show()
 
 
+def try_the_model():
+    class_names = lemon_models_to_train().class_names
+    model = compile_model_to_train()
+    image_path = get_path_to_test() + '/test/mycosphaerella_citri/sheets-test-1.jpg'
+
+    image = tf.keras.preprocessing.image.load_img(image_path)
+    input_arr = tf.keras.preprocessing.image.img_to_array(image)
+    input_arr = np.array([input_arr])  # Convert single image to a batch.
+    predictions = model.predict(input_arr)
+
+    score = tf.nn.softmax(predictions[0])
+    print(
+        "Esta imagen parece ser {} con un {:.2f} % de exactitud."
+        .format(class_names[np.argmax(score)], 100 * np.max(score))
+    )
+
+
 if __name__ == '__main__':
-    show_metrics_about_train()
+    class_names = lemon_models_to_train().class_names
+    print('these are the classes: \n')
+    print(class_names)
+    try_the_model()
