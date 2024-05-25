@@ -8,6 +8,8 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 
+# This was made by Spacecodee
+
 def get_model_path():
     # Get the directory containing the current script
     path_to_train = os.path.dirname(os.path.realpath(filename='/model/model'))
