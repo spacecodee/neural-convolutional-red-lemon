@@ -8,7 +8,12 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 
-# from tensorflow.keras.models import Sequential
+def get_model_path():
+    # Get the directory containing the current script
+    path_to_train = os.path.dirname(os.path.realpath(filename='/model/model'))
+
+    return path_to_train
+
 
 def get_path_to_train():
     # Get the directory containing the current script
@@ -19,7 +24,7 @@ def get_path_to_train():
 
 def get_path_to_test():
     # Get the directory containing the current script
-    path_to_train = os.path.dirname(os.path.realpath(filename='test/'))
+    path_to_train = os.path.dirname(os.path.realpath(filename='test/test'))
 
     return path_to_train
 
@@ -33,7 +38,7 @@ def lemon_models_to_train():
             get_path_to_train(),
             validation_split=data_to_take,
             subset="training",
-            seed=123,
+            seed=123,  # Seed for random shuffling applied to the data before applying the split
             image_size=(300, 300))
     except FileNotFoundError as e:
         print('Error: ' + e.strerror)
@@ -42,26 +47,28 @@ def lemon_models_to_train():
 
 
 def lemon_models_to_validate():
-    data_to_take = 0.8
+    data_to_take = 0.9
     val_ds = tf.keras.utils.image_dataset_from_directory(
         get_path_to_train(),
         validation_split=data_to_take,
         subset="validation",
         seed=123,
+        # Seed for random shuffling applied to the data before applying the split, in other words seed means that the
+        # same seed will always produce the same output (in this case the same split) in the random shuffling
         image_size=(300, 300))
     return val_ds
 
 
 def show_images_from_train():
     train_ds = lemon_models_to_train()
-    class_names = train_ds.class_names
+    class_names_out = train_ds.class_names
 
     plt.figure(figsize=(10, 10))
     for images, labels in train_ds.take(1):
         for i in range(9):
             _ = plt.subplot(3, 3, i + 1)
             plt.imshow(images[i].numpy().astype("uint8"))
-            plt.title(class_names[labels[i]])
+            plt.title(class_names_out[labels[i]])
             plt.axis("off")
 
 
@@ -75,8 +82,8 @@ def validate_train_dimensions():
 
 def build_first_model_to_train():
     train_ds = lemon_models_to_train()
-    class_names = train_ds.class_names
-    num_classes = len(class_names)
+    class_names_out = train_ds.class_names
+    num_classes = len(class_names_out)
 
     model = Sequential([
         keras.Input(shape=(300, 300, 3)),  # Input layer with shape 300x300 pixels and 3 channels (RGB)
@@ -88,6 +95,7 @@ def build_first_model_to_train():
         layers.Conv2D(64, 3, padding='same', activation='relu'),  # 64 filters, 3x3 kernel
         layers.MaxPooling2D(),  # 2x2 pool size
         layers.Flatten(),  # Flatten the output of the last Conv2D layer
+        layers.Dropout(0.5),  # Dropout layer with a rate of 0.5 (half of the input units are dropped)
         layers.Dense(units=128, activation='relu'),  # 128 neurons in the Dense layer
         layers.Dense(num_classes)  # Number of classes
     ])
@@ -113,19 +121,19 @@ def train_lemon_model():
     model = compile_model_to_train()
     train_ds = lemon_models_to_train()
     val_ds = lemon_models_to_validate()
-    epochs = 6
+    epochs = 20
     history = model.fit(
         train_ds,
         validation_data=val_ds,
         epochs=epochs
     )
 
-    return history, epochs
+    return history, epochs, model
 
 
 def show_metrics_about_train():
-    epochs = train_lemon_model()[1]
     history = train_lemon_model()[0]
+    epochs = train_lemon_model()[1]
 
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']
@@ -151,9 +159,9 @@ def show_metrics_about_train():
 
 
 def try_the_model():
-    class_names = lemon_models_to_train().class_names
+    class_names_out = lemon_models_to_train().class_names
     model = compile_model_to_train()
-    image_path = get_path_to_test() + '/test/mycosphaerella_citri/sheets-test-1.jpg'
+    image_path = get_path_to_test() + '/mycosphaerella_citri/sheet-test-1.jpg'
 
     image = tf.keras.preprocessing.image.load_img(image_path)
     input_arr = tf.keras.preprocessing.image.img_to_array(image)
@@ -163,7 +171,47 @@ def try_the_model():
     score = tf.nn.softmax(predictions[0])
     print(
         "Esta imagen parece ser {} con un {:.2f} % de exactitud."
-        .format(class_names[np.argmax(score)], 100 * np.max(score))
+        .format(class_names_out[np.argmax(score)], 100 * np.max(score))
+    )
+
+
+def save_model():
+    show_metrics_about_train()
+    model = train_lemon_model()[2]
+    model.save('model/neural_c_n_lemon_model.keras')
+
+
+def load_model():
+    extension = '.keras'
+    save_model()
+    model = keras.models.load_model('model/neural_c_n_lemon_model' + extension)
+    return model
+
+
+def try_with_saved_model():
+    class_names_out = lemon_models_to_train().class_names
+    model = load_model()
+    image_path = get_path_to_test() + '/planococcus_citri/sheet-test-1.jpg'
+
+    image = tf.keras.preprocessing.image.load_img(image_path)
+    input_arr = tf.keras.preprocessing.image.img_to_array(image)
+    input_arr = np.array([input_arr])  # Convert single image to a batch.
+    predictions = model.predict(input_arr)
+
+    score = tf.nn.softmax(predictions[0])
+
+    # make a loop of predictions values
+    for i in range(0, len(score)):
+        print(
+            "Esta imagen parece ser {} con un {:.2f} % de exactitud."
+            .format(class_names_out[i], 100 * score[i])
+        )
+    print('\n')
+    print('The most likely class is: ' + class_names_out[np.argmax(score)])
+    print('\n')
+    print(
+        "Esta imagen parece ser {} con un {:.2f} % de exactitud."
+        .format(class_names_out[np.argmax(score)], 100 * np.max(score))
     )
 
 
@@ -171,4 +219,4 @@ if __name__ == '__main__':
     class_names = lemon_models_to_train().class_names
     print('these are the classes: \n')
     print(class_names)
-    try_the_model()
+    try_with_saved_model()
