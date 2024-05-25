@@ -183,7 +183,7 @@ def save_model():
 
 def load_model():
     extension = '.keras'
-    save_model()
+    # save_model()
     model = keras.models.load_model('model/neural_c_n_lemon_model' + extension)
     return model
 
