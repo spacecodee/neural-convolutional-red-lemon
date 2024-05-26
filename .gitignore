@@ -162,4 +162,5 @@ cython_debug/
 
 # mine
 model
-.idea
+.idea/sonarlint
+.DS_Store
