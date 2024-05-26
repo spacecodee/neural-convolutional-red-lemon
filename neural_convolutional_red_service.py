@@ -1,7 +1,7 @@
 import tensorflow as tf
 import os
 import numpy as np
-from tensorflow.keras import datasets, layers, models, Sequential
+from tensorflow.keras import Sequential
 import matplotlib.pyplot as plt
 
 from tensorflow import keras
@@ -33,7 +33,7 @@ def get_path_to_test():
 
 # Let's train the model
 def lemon_models_to_train():
-    data_to_take = 0.1
+    data_to_take = 0.01
     train_ds = None
     try:
         train_ds = tf.keras.utils.image_dataset_from_directory(
@@ -49,10 +49,10 @@ def lemon_models_to_train():
 
 
 def lemon_models_to_validate():
-    data_to_take = 0.9
+    data_to_validate = 0.99
     val_ds = tf.keras.utils.image_dataset_from_directory(
         get_path_to_train(),
-        validation_split=data_to_take,
+        validation_split=data_to_validate,
         subset="validation",
         seed=123,
         # Seed for random shuffling applied to the data before applying the split, in other words seed means that the
@@ -160,23 +160,6 @@ def show_metrics_about_train():
     plt.show()
 
 
-def try_the_model():
-    class_names_out = lemon_models_to_train().class_names
-    model = compile_model_to_train()
-    image_path = get_path_to_test() + '/mycosphaerella_citri/sheet-test-1.jpg'
-
-    image = tf.keras.preprocessing.image.load_img(image_path)
-    input_arr = tf.keras.preprocessing.image.img_to_array(image)
-    input_arr = np.array([input_arr])  # Convert single image to a batch.
-    predictions = model.predict(input_arr)
-
-    score = tf.nn.softmax(predictions[0])
-    print(
-        "Esta imagen parece ser {} con un {:.2f} % de exactitud."
-        .format(class_names_out[np.argmax(score)], 100 * np.max(score))
-    )
-
-
 def save_model():
     show_metrics_about_train()
     model = train_lemon_model()[2]
@@ -191,9 +174,17 @@ def load_model():
 
 
 def try_with_saved_model():
+    model_1 = '/mycosphaerella_citri/'
+    model_2 = '/planococcus_citri/'
+    model_3 = '/tetranychus_urticae/'
+    model_4 = '/aphididae/'
+
+    file_name = 'sheet-test-'
+    file_extension = '.jpg'
+
     class_names_out = lemon_models_to_train().class_names
     model = load_model()
-    image_path = get_path_to_test() + '/planococcus_citri/sheet-test-1.jpg'
+    image_path = get_path_to_test() + model_1 + file_name + '2' + file_extension
 
     image = tf.keras.preprocessing.image.load_img(image_path)
     input_arr = tf.keras.preprocessing.image.img_to_array(image)
@@ -205,14 +196,14 @@ def try_with_saved_model():
     # make a loop of predictions values
     for i in range(0, len(score)):
         print(
-            "Esta imagen parece ser {} con un {:.2f} % de exactitud."
+            "This image looks like: {} with a percentage {:.2f} % of similarity."
             .format(class_names_out[i], 100 * score[i])
         )
     print('\n')
     print('The most likely class is: ' + class_names_out[np.argmax(score)])
     print('\n')
     print(
-        "Esta imagen parece ser {} con un {:.2f} % de exactitud."
+        "This image seems to be {} with a percentage {:.2f} % of similarity."
         .format(class_names_out[np.argmax(score)], 100 * np.max(score))
     )
 
@@ -221,4 +212,5 @@ if __name__ == '__main__':
     class_names = lemon_models_to_train().class_names
     print('these are the classes: \n')
     print(class_names)
+    print('\n')
     try_with_saved_model()
