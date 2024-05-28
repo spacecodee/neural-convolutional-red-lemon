@@ -178,13 +178,14 @@ def try_with_saved_model():
     model_2 = '/planococcus_citri/'
     model_3 = '/tetranychus_urticae/'
     model_4 = '/aphididae/'
+    model_5 = '/phyllocnistis_citrella/'
 
     file_name = 'sheet-test-'
     file_extension = '.jpg'
 
     class_names_out = lemon_models_to_train().class_names
     model = load_model()
-    image_path = get_path_to_test() + model_1 + file_name + '2' + file_extension
+    image_path = get_path_to_test() + model_5 + file_name + '3' + file_extension
 
     image = tf.keras.preprocessing.image.load_img(image_path)
     input_arr = tf.keras.preprocessing.image.img_to_array(image)
