@@ -1,15 +1,15 @@
 import tensorflow as tf
 import os
 import numpy as np
-from tensorflow.keras import Sequential
+from tensorflow.keras import Sequential, layers
 import matplotlib.pyplot as plt
 
 from tensorflow import keras
-from tensorflow.keras import layers
 
 
 # This was made by Spacecodee
 
+# Este método devuelve la ruta del directorio actual
 def get_model_path():
     # Get the directory containing the current script
     path_to_train = os.path.dirname(os.path.realpath(filename='/model/model'))
@@ -17,6 +17,7 @@ def get_model_path():
     return path_to_train
 
 
+# Este método devuelve la ruta del directorio actual para el entrenamiento
 def get_path_to_train():
     # Get the directory containing the current script
     path_to_train = os.path.dirname(os.path.realpath(filename='train/train'))
@@ -24,6 +25,7 @@ def get_path_to_train():
     return path_to_train
 
 
+# Este método devuelve la ruta del directorio actual para las pruebas
 def get_path_to_test():
     # Get the directory containing the current script
     path_to_train = os.path.dirname(os.path.realpath(filename='test/test'))
@@ -31,33 +33,34 @@ def get_path_to_test():
     return path_to_train
 
 
-# Let's train the model
+# Este método prepara los datos para el entrenamiento
 def lemon_models_to_train():
-    data_to_take = 0.01
-    train_ds = None
+    data_to_take = 0.01  # Tomará el 1% de los datos
+    train_ds = None  # Variable que almacenará los datos de entrenamiento
     try:
-        train_ds = tf.keras.utils.image_dataset_from_directory(
+        train_ds = tf.keras.utils.image_dataset_from_directory(  # Carga los datos de entrenamiento
             get_path_to_train(),
-            validation_split=data_to_take,
-            subset="training",
-            seed=123,  # Seed for random shuffling applied to the data before applying the split
-            image_size=(300, 300))
+            validation_split=data_to_take,  # Tomará el 1% de los datos para el entrenamiento
+            subset="training",  # El subconjunto de datos a utilizar (entrenamiento)
+            seed=123,
+            # El valor de la semilla para la aleatoriedad (123) (la misma semilla siempre producirá la misma salida)
+            image_size=(300, 300))  # Tamaño de la imagen (300x300 píxeles)
     except FileNotFoundError as e:
         print('Error: ' + e.strerror)
 
     return train_ds
 
 
+# Este método prepara los datos para la validación
 def lemon_models_to_validate():
-    data_to_validate = 0.99
+    data_to_validate = 0.99  # Tomará el 99% de los datos
     val_ds = tf.keras.utils.image_dataset_from_directory(
         get_path_to_train(),
-        validation_split=data_to_validate,
-        subset="validation",
+        validation_split=data_to_validate,  # Tomará el 99% de los datos para la
+        subset="validation",  # El subconjunto de datos a utilizar (validación)
         seed=123,
-        # Seed for random shuffling applied to the data before applying the split, in other words seed means that the
-        # same seed will always produce the same output (in this case the same split) in the random shuffling
-        image_size=(300, 300))
+        # El valor de la semilla para la aleatoriedad (123) (la misma semilla siempre producirá la misma salida)
+        image_size=(300, 300))  # Tamaño de la imagen (300x300 píxeles)
     return val_ds
 
 
@@ -82,49 +85,67 @@ def validate_train_dimensions():
         break
 
 
+# Este método construye el modelo de la red neuronal convolucional
 def build_first_model_to_train():
     train_ds = lemon_models_to_train()
     class_names_out = train_ds.class_names
     num_classes = len(class_names_out)
 
+    # aquí se construye el modelo de la red neuronal convolucional
     model = Sequential([
-        keras.Input(shape=(300, 300, 3)),  # Input layer with shape 300x300 pixels and 3 channels (RGB)
-        layers.Rescaling(1. / 255),  # Normalize pixel values to be between 0 and 1 (from 0 to 255)
-        layers.Conv2D(16, 3, padding='same', activation='relu'),  # 16 filters, 3x3 kernel
-        layers.MaxPooling2D(),  # 2x2 pool size
-        layers.Conv2D(32, 3, padding='same', activation='relu'),  # 32 filters, 3x3 kernel
-        layers.MaxPooling2D(),  # 2x2 pool size
-        layers.Conv2D(64, 3, padding='same', activation='relu'),  # 64 filters, 3x3 kernel
-        layers.MaxPooling2D(),  # 2x2 pool size
-        layers.Flatten(),  # Flatten the output of the last Conv2D layer
+        keras.Input(shape=(300, 300, 3)),  # Entrada de la red neuronal convolucional (300x300 píxeles, 3 canales)
+        layers.Rescaling(1. / 255),  # Reescalado de los píxeles de la imagen (valores entre 0 y 1) (normalización)
+
+        layers.Conv2D(8, 3, padding='same', activation='relu'),
+        # 8 filtros, 3x3 kernel, activación relu la cual ayuda a la red a aprender patrones no lineales en los datos
+        layers.MaxPooling2D(),  # 2x2 pool size (se reduce la dimensión de la imagen y se mantiene la información)
+
+        layers.Conv2D(16, 3, padding='same', activation='relu'),  # 16 filtros, 3x3 kernel
+        layers.MaxPooling2D(),  # 2x2 pool size (se reduce la dimensión de la imagen y se mantiene la información)
+
+        layers.Conv2D(32, 3, padding='same', activation='relu'),  # 32 filtros, 3x3 kernel
+        layers.MaxPooling2D(),  # 2x2 pool size (se reduce la dimensión de la imagen y se mantiene la información)
+
+        layers.Conv2D(64, 3, padding='same', activation='relu'),  # 64 filtros, 3x3 kernel
+        layers.MaxPooling2D(),  # 2x2 pool size (se reduce la dimensión de la imagen y se mantiene la información)
+
+        layers.Conv2D(128, 3, padding='same', activation='relu'),  # 128 filtros, 3x3 kernel
+        layers.MaxPooling2D(),  # 2x2 pool size (se reduce la dimensión de la imagen y se mantiene la información)
+
+        layers.Flatten(),  # Aplanamiento de la imagen (se convierte en un vector unidimensional)
         layers.Dropout(0.5),  # Dropout layer with a rate of 0.5 (half of the input units are dropped)
-        layers.Dense(units=128, activation='relu'),  # 128 neurons in the Dense layer
-        layers.Dense(num_classes)  # Number of classes
+        # Dropout sirve para evitar el sobre ajuste en la red neuronal y mejorar la generalización
+
+        layers.Dense(units=128, activation='relu'),
+        # 128 neuronas en la capa densa para aprender patrones, activación relu
+        layers.Dense(num_classes)  # Número de clases en la capa densa
     ])
 
     # compile the model
     return model
 
 
+# Este método compila el modelo para el entrenamiento
 def compile_model_to_train():
-    model = build_first_model_to_train()
+    model = build_first_model_to_train()  # Obtener el modelo de la red neuronal convolucional
     model.compile(optimizer='adam',
-                  # Optimizer function: Adam (Adaptive Moment Estimation) optimizer is an extension
-                  # to stochastic gradient descent
+                  # Adam es un algoritmo de optimización que se puede utilizar para entrenar redes neuronales
+                  # y minimizar la función de pérdida
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                  # Loss function for the model to minimize during optimization (cross-entropy)
-                  metrics=['accuracy'])  # Metric to monitor during training and testing (accuracy)
+                  # Función de pérdida para medir qué tan bien el modelo se ajusta a los datos de entrenamiento
+                  metrics=['accuracy'])  # Métrica para evaluar el rendimiento del modelo (precisión)
 
-    model.summary()
+    model.summary()  # Muestra un resumen del modelo de la red neuronal convolucional construido
     return model
 
 
+# Es momento de entrenar el modelo
 def train_lemon_model():
     model = compile_model_to_train()
     train_ds = lemon_models_to_train()
     val_ds = lemon_models_to_validate()
-    epochs = 20
-    history = model.fit(
+    epochs = 20  # Número de épocas para entrenar el modelo
+    history = model.fit(  # Entrenamiento del modelo
         train_ds,
         validation_data=val_ds,
         epochs=epochs
@@ -133,9 +154,10 @@ def train_lemon_model():
     return history, epochs, model
 
 
+# Este método muestra las métricas del entrenamiento
 def show_metrics_about_train():
-    history = train_lemon_model()[0]
-    epochs = train_lemon_model()[1]
+    history = train_lemon_model()[0]  # Obtener el historial del entrenamiento
+    epochs = train_lemon_model()[1]  # Obtener el número de épocas
 
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']
@@ -143,8 +165,9 @@ def show_metrics_about_train():
     loss = history.history['loss']
     val_loss = history.history['val_loss']
 
-    epochs_range = range(epochs)
+    epochs_range = range(epochs)  # Rango de épocas
 
+    # Gráficas de las métricas del entrenamiento
     plt.figure(figsize=(8, 8))
     plt.subplot(1, 2, 1)
     plt.plot(epochs_range, acc, label='Training Accuracy')
@@ -152,6 +175,7 @@ def show_metrics_about_train():
     plt.legend(loc='lower right')
     plt.title('Training and Validation Accuracy')
 
+    # Construir la gráfica de la pérdida
     plt.subplot(1, 2, 2)
     plt.plot(epochs_range, loss, label='Training Loss')
     plt.plot(epochs_range, val_loss, label='Validation Loss')
@@ -160,12 +184,14 @@ def show_metrics_about_train():
     plt.show()
 
 
+# Este método guarda el modelo entrenado
 def save_model():
     show_metrics_about_train()
     model = train_lemon_model()[2]
     model.save('model/neural_c_n_lemon_model.keras')
 
 
+# Este método carga el modelo entrenado
 def load_model():
     extension = '.keras'
     # save_model()
@@ -173,7 +199,9 @@ def load_model():
     return model
 
 
+# Luego de entrenar el modelo, es momento de probar la probabilidad de éxito de este.
 def try_with_saved_model():
+    # modelos a probar
     model_1 = '/mycosphaerella_citri/'
     model_2 = '/planococcus_citri/'
     model_3 = '/tetranychus_urticae/'
@@ -187,10 +215,11 @@ def try_with_saved_model():
     model = load_model()
     image_path = get_path_to_test() + model_5 + file_name + '3' + file_extension
 
+    # Cargar la imagen para probar
     image = tf.keras.preprocessing.image.load_img(image_path)
-    input_arr = tf.keras.preprocessing.image.img_to_array(image)
-    input_arr = np.array([input_arr])  # Convert single image to a batch.
-    predictions = model.predict(input_arr)
+    input_arr = tf.keras.preprocessing.image.img_to_array(image)  # Convertir la imagen en un array
+    input_arr = np.array([input_arr])  # Convertir el array en un array de numpy
+    predictions = model.predict(input_arr)  # Predecimos a qué enfermedad le pertenece la imagen con la CNN
 
     score = tf.nn.softmax(predictions[0])
 
