@@ -121,7 +121,6 @@ def build_first_model_to_train():
         layers.Dense(num_classes)  # Número de clases en la capa densa
     ])
 
-    # compile the model
     return model
 
 
@@ -144,7 +143,7 @@ def train_lemon_model():
     model = compile_model_to_train()
     train_ds = lemon_models_to_train()
     val_ds = lemon_models_to_validate()
-    epochs = 20  # Número de épocas para entrenar el modelo
+    epochs = 30  # Número de épocas para entrenar el modelo
     history = model.fit(  # Entrenamiento del modelo
         train_ds,
         validation_data=val_ds,
@@ -213,7 +212,7 @@ def try_with_saved_model():
 
     class_names_out = lemon_models_to_train().class_names
     model = load_model()
-    image_path = get_path_to_test() + model_5 + file_name + '3' + file_extension
+    image_path = get_path_to_test() + model_1 + file_name + '2' + file_extension
 
     # Cargar la imagen para probar
     image = tf.keras.preprocessing.image.load_img(image_path)
@@ -221,9 +220,9 @@ def try_with_saved_model():
     input_arr = np.array([input_arr])  # Convertir el array en un array de numpy
     predictions = model.predict(input_arr)  # Predecimos a qué enfermedad le pertenece la imagen con la CNN
 
-    score = tf.nn.softmax(predictions[0])
+    score = tf.nn.softmax(predictions[0])  # la capa de softmax convierte las salidas en probabilidades (0-1)
 
-    # make a loop of predictions values
+    # Es momento de mostrar las probabilidades de parentesco con la imagen en las predicciones
     for i in range(0, len(score)):
         print(
             "This image looks like: {} with a percentage {:.2f} % of similarity."
